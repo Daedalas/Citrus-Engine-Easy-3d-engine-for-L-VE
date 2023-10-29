@@ -50,102 +50,21 @@ function citrus.init()
     citrus.colors.blue = {0, 0, 1, 1}
 
     -- Deal with Vector Math
-    citrus.vectors = require "citrus/vectors"
-    
-    function citrus.getRotationMatrixXZ(x, z, rot)
-        return z * math.sin(rot) + x * math.cos(rot), z * math.cos(rot) - x * math.sin(rot)
-    end
+    vector = require "citrus/vectors"
+    citrus.newMesh = require "citrus/geomesh"
+    citrus.newCamera = require "citrus/camera"
+    citrus.matrix = require "citrus/matrix"
 
-    function citrus.getProjectionMatrix(vertices, face, cam, pos, rot)
+    citrus.degtorad = function(d)
 
-        local res_x, res_z = citrus.getRotationMatrixXZ(pos.x+vertices[face][1], pos.z+vertices[face][3], rot.y)
-        local res_y = pos.y+vertices[face][2]
-
-        return ((cam.position.x+res_x)*cam.fov/(cam.position.z+res_z)*cam.fov)+love.graphics.getWidth()/2, (cam.position.y+res_y)*cam.fov/(cam.position.z+res_z)*cam.fov+love.graphics.getHeight()/2
+        return d*math.pi/180
 
     end
 
-    function citrus.newMesh(meshtype, pos, rot, size)
+    citrus.radtodeg = function(r)
 
-        if meshtype == "cube" then
+        return r*180/math.pi
 
-            return {
-
-                mesh = {
-
-                    vertices = {
-                    
-                        {-1, 1, 1},
-                        {1, 1, 1},
-                        {-1, -1, 1},
-                        {1, -1, 1},
-
-                        {-1, 1, -1},
-                        {1, 1, -1},
-                        {-1, -1, -1},
-                        {1, -1, -1}
-
-                    },
-
-                    faces = {
-
-                        {1, 2, 3, 4},
-                        {1, 5, 3, 7},
-                        {1, 2, 5, 6},
-                        {5, 6, 7, 8},
-                        {3, 4, 7, 8},
-                        {6, 2, 8, 4}
-
-                    }
-
-                },
-
-                position = {
-
-                    x = pos[1],
-                    y = pos[2],
-                    z = pos[3]
-
-                },
-                rotation = {
-
-                    x = rot[1],
-                    y = rot[2],
-                    z = rot[3]
-
-                },
-                scale = size
-
-            }
-
-        end
-
-    end
-
-    function citrus.newCamera(pos, rot, fs)
-
-        return {
-
-            position = {
-
-                x = pos[1],
-                y = pos[2],
-                z = pos[3]
-
-            },
-            
-            rotation = {
-
-                x = rot[1],
-                y = rot[2],
-                z = rot[3]
-
-            },
-            
-            fov = fs
-
-        }
-    
     end
 
 end
@@ -156,18 +75,29 @@ function citrus.drawMesh(model, camera)
 
         local currentFace = model.mesh.faces[i]
 
-        local px, py = citrus.getProjectionMatrix(model.mesh.vertices, currentFace[1], camera, model.position, model.rotation)
-        local px2, py2 = citrus.getProjectionMatrix(model.mesh.vertices, currentFace[2], camera, model.position, model.rotation)
-        local px3, py3 = citrus.getProjectionMatrix(model.mesh.vertices, currentFace[3], camera, model.position, model.rotation)
-        local px4, py4 = citrus.getProjectionMatrix(model.mesh.vertices, currentFace[4], camera, model.position, model.rotation)
+        local px, py = citrus.matrix.getProjectionMatrix(model.mesh.vertices, currentFace[1], camera, model.position, model.rotation, model.scale)
+        local px2, py2 = citrus.matrix.getProjectionMatrix(model.mesh.vertices, currentFace[2], camera, model.position, model.rotation, model.scale)
+        local px3, py3 = citrus.matrix.getProjectionMatrix(model.mesh.vertices, currentFace[3], camera, model.position, model.rotation, model.scale)
+
+        --love.graphics.line(px, py, px2, py2)
+        --love.graphics.line(px, py, px3, py3)
+
+        love.graphics.polygon("line", {px, py, px2, py2, px3, py3})
+        
+        if currentFace[4] then
+        
+            local px4, py4 = citrus.matrix.getProjectionMatrix(model.mesh.vertices, currentFace[4], camera, model.position, model.rotation, model.scale)
+            --love.graphics.line(px2, py2, px4, py4)
+            --love.graphics.line(px3, py3, px4, py4)
+            
+            love.graphics.polygon("line", {px, py, px2, py2, px3, py3})
+            love.graphics.polygon("line", {px2, py2, px3, py3, px4, py4})  
+        
+        end
 
         --love.graphics.polygon("line", {px, py, px2, py2, px3, py3})
         --love.graphics.polygon("line", {px2, py2, px3, py4, px4, py4})
-
-        love.graphics.line(px, py, px2, py2)
-        love.graphics.line(px, py, px3, py3)
-        love.graphics.line(px2, py2, px4, py4)
-        love.graphics.line(px3, py3, px4, py4)
+        
         --love.graphics.line(px2, py2, px3, py3)
 
     end

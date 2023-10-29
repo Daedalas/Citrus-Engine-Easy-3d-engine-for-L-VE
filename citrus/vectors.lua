@@ -21,3 +21,5 @@ function vector.new(xx, yy)
     end
 
 end
+
+return vector
